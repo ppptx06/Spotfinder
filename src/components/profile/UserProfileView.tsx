@@ -1,144 +1,275 @@
 "use client";
 
-import React, { useState } from "react";
-import { User, ShieldCheck, GraduationCap, Laptop, BookOpen, Globe, LogOut } from "lucide-react";
-import { UserType } from "@/types/spot";
+import React, { useState, useEffect } from "react";
+import {
+  User,
+  ShieldCheck,
+  ShieldAlert,
+  GraduationCap,
+  Laptop,
+  BookOpen,
+  Globe,
+  ChevronLeft,
+  Key,
+  LogOut,
+  LogIn,
+  Sliders,
+  CheckCircle,
+  Map,
+} from "lucide-react";
+import { Language, useTranslation, setLanguage } from "@/lib/i18n";
+import { getCurrentUser, logout, AuthUser } from "@/lib/auth";
 
 interface UserProfileViewProps {
-  onClose?: () => void;
+  onBack: () => void;
+  lang: Language;
+  onLanguageChange: (lang: Language) => void;
+  onOpenAuth: () => void;
+  onOpenAdmin: () => void;
 }
 
-export const UserProfileView: React.FC<UserProfileViewProps> = () => {
-  const [userRole, setUserRole] = useState<UserType>("STUDENT");
-  const [lang, setLang] = useState<"kk" | "ru" | "en">("ru");
+export const UserProfileView: React.FC<UserProfileViewProps> = ({
+  onBack,
+  lang,
+  onLanguageChange,
+  onOpenAuth,
+  onOpenAdmin,
+}) => {
+  const t = useTranslation(lang);
+  const [user, setUser] = useState<AuthUser | null>(null);
+
+  useEffect(() => {
+    setUser(getCurrentUser());
+    const handleAuth = () => setUser(getCurrentUser());
+    window.addEventListener("auth-changed", handleAuth);
+    return () => window.removeEventListener("auth-changed", handleAuth);
+  }, []);
+
+  const handleLogout = () => {
+    logout();
+    setUser(null);
+  };
 
   return (
-    <div className="fixed inset-0 z-40 bg-[#F2F2F7] dark:bg-black overflow-y-auto safe-top pb-24 px-4 space-y-4 animate-fadeIn">
-      <div className="max-w-md mx-auto space-y-4 pt-4">
-        {/* Profile Header */}
-        <div className="apple-glass rounded-3xl p-5 shadow-apple flex items-center space-x-4">
-          <div className="w-16 h-16 rounded-2xl bg-gradient-to-tr from-apple-blue to-cyan-400 flex items-center justify-center text-white shadow-md">
-            <User className="w-8 h-8" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-1.5">
-              <h2 className="text-base font-bold text-black dark:text-white">Ибрахим Нұрғали</h2>
-              <ShieldCheck className="w-4 h-4 text-apple-blue" />
-            </div>
-            <p className="text-xs text-apple-gray1">i_nurgali@astanait.edu.kz</p>
-            <div className="inline-flex items-center space-x-1 mt-1 px-2 py-0.5 rounded-full bg-apple-green/15 text-apple-green text-[10px] font-bold">
-              <span>Студент подтверждён (Student ID)</span>
-            </div>
+    <div className="fixed inset-0 z-50 bg-[#F2F2F7] overflow-y-auto safe-top pb-24 animate-fadeIn">
+      <div className="max-w-md mx-auto space-y-4">
+        {/* iOS Navigation Bar */}
+        <div className="sticky top-0 z-10 bg-[#F2F2F7]/90 backdrop-blur-xl px-4 pt-4 pb-2 border-b border-[rgba(60,60,67,0.08)]">
+          <div className="flex items-center justify-between">
+            <button
+              onClick={onBack}
+              className="flex items-center text-[#007AFF] active:opacity-60 transition-opacity -ml-1"
+            >
+              <ChevronLeft className="w-5 h-5 -mr-0.5" />
+              <span className="text-[15px] font-normal">{t("mapBack")}</span>
+            </button>
+            <h2 className="text-[17px] font-semibold text-[#1C1C1E]">
+              {t("profileTitle")}
+            </h2>
+            <div className="w-14" />
           </div>
         </div>
 
-        {/* Role Selector (ERD Subtypes) */}
-        <div className="apple-glass rounded-3xl p-4 shadow-apple space-y-3">
-          <span className="text-[11px] font-bold text-apple-gray1 uppercase tracking-wide">
-            Тип профиля (ERD Subtype)
-          </span>
-          <div className="grid grid-cols-3 gap-2">
-            {[
-              { id: "STUDENT" as UserType, label: "Студент", icon: GraduationCap },
-              { id: "REMOTE_WORKER" as UserType, label: "Удалёнщик", icon: Laptop },
-              { id: "HIGH_SCHOOL_STUDENT" as UserType, label: "Школьник", icon: BookOpen },
-            ].map((role) => {
-              const Icon = role.icon;
-              return (
-                <button
-                  key={role.id}
-                  onClick={() => setUserRole(role.id)}
-                  className={`p-2.5 rounded-2xl flex flex-col items-center justify-center space-y-1 text-xs font-semibold transition-all ${
-                    userRole === role.id
-                      ? "bg-apple-blue text-white shadow-sm"
-                      : "bg-apple-gray6 dark:bg-apple-darkElevated text-black dark:text-white"
-                  }`}
-                >
-                  <Icon className="w-4 h-4" />
-                  <span>{role.label}</span>
-                </button>
-              );
-            })}
+        <div className="px-4 space-y-4">
+          {/* User Profile Card */}
+          <div className="bg-white rounded-2xl p-5 shadow-apple border border-[rgba(60,60,67,0.04)] flex items-center space-x-4">
+            <div
+              className={`w-16 h-16 rounded-2xl flex items-center justify-center text-white shadow-apple-elevated shrink-0 ${
+                user?.isAdmin
+                  ? "bg-gradient-to-br from-[#007AFF] to-[#5856D6]"
+                  : "bg-gradient-to-br from-[#007AFF] to-[#5AC8FA]"
+              }`}
+            >
+              {user?.isAdmin ? (
+                <ShieldAlert className="w-8 h-8" />
+              ) : (
+                <User className="w-8 h-8" />
+              )}
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="flex items-center space-x-1.5">
+                <h2 className="text-[17px] font-bold text-[#1C1C1E] truncate">
+                  {user?.name || "Гость"}
+                </h2>
+                {user?.isAdmin ? (
+                  <ShieldAlert className="w-4 h-4 text-[#007AFF] shrink-0" />
+                ) : (
+                  <ShieldCheck className="w-4 h-4 text-[#34C759] shrink-0" />
+                )}
+              </div>
+              <p className="text-[13px] text-[#8E8E93] truncate">
+                {user?.email || "Гостевой режим"}
+              </p>
+              <div className="mt-1">
+                {user?.isAdmin ? (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#007AFF]/10 text-[#007AFF] text-[10px] font-bold">
+                    {t("adminRole")}
+                  </span>
+                ) : (
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full bg-[#34C759]/10 text-[#34C759] text-[10px] font-bold">
+                    {t("verifiedStudentBadge")}
+                  </span>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Subtype Attributes Form */}
-          {userRole === "STUDENT" && (
-            <div className="space-y-2 pt-2 text-xs">
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Университет:</span>
-                <span className="font-semibold text-black dark:text-white">Astana IT University</span>
+          {/* Admin Panel Quick Access Button */}
+          {user?.isAdmin && (
+            <button
+              onClick={onOpenAdmin}
+              className="w-full p-4 rounded-2xl bg-[#007AFF] text-white flex items-center justify-between shadow-apple active:scale-[0.99] transition-all"
+            >
+              <div className="flex items-center space-x-3">
+                <div className="w-9 h-9 rounded-xl bg-white/20 flex items-center justify-center">
+                  <ShieldAlert className="w-5 h-5 text-white" />
+                </div>
+                <div className="text-left">
+                  <div className="text-sm font-bold">{t("adminPanelBtn")}</div>
+                  <div className="text-[11px] text-white/80">
+                    Добавление, редактирование и удаление точек в SQLite
+                  </div>
+                </div>
               </div>
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Специальность:</span>
-                <span className="font-semibold text-black dark:text-white">Software Engineering (SE-2610)</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Стиль учёбы:</span>
-                <span className="font-semibold text-apple-blue">Solo Deep Work</span>
-              </div>
-            </div>
+              <span className="text-xs bg-white text-[#007AFF] px-2.5 py-1 rounded-full font-bold">
+                Открыть →
+              </span>
+            </button>
           )}
 
-          {userRole === "REMOTE_WORKER" && (
-            <div className="space-y-2 pt-2 text-xs">
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Компания / IT:</span>
-                <span className="font-semibold text-black dark:text-white">Freelance Developer</span>
+          {/* Language Switcher — REAL TRILINGUAL WORKING SWITCHER */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] overflow-hidden">
+            <div className="px-4 pt-3 pb-1 flex items-center justify-between">
+              <div className="flex items-center space-x-2">
+                <Globe className="w-4 h-4 text-[#007AFF]" />
+                <span className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wide">
+                  {t("interfaceLang")}
+                </span>
               </div>
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Формат работы:</span>
-                <span className="font-semibold text-apple-blue">Full-time Remote</span>
+              <span className="text-[11px] font-bold text-[#007AFF]">
+                {lang === "kk" ? "Қазақ тілі" : lang === "ru" ? "Русский" : "English"}
+              </span>
+            </div>
+            <div className="px-4 py-3">
+              <div className="flex p-1 bg-[#E5E5EA]/70 rounded-xl space-x-1">
+                {[
+                  { id: "kk" as Language, label: "Қазақша" },
+                  { id: "ru" as Language, label: "Русский" },
+                  { id: "en" as Language, label: "English" },
+                ].map((l) => (
+                  <button
+                    key={l.id}
+                    onClick={() => {
+                      onLanguageChange(l.id);
+                      setLanguage(l.id);
+                      if (typeof window !== "undefined" && "vibrate" in navigator) {
+                        navigator.vibrate(10);
+                      }
+                    }}
+                    className={`flex-1 py-2 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                      lang === l.id
+                        ? "bg-white text-[#1C1C1E] shadow-sm font-bold scale-[1.02]"
+                        : "text-[#8E8E93] hover:text-[#1C1C1E]"
+                    }`}
+                  >
+                    {l.label}
+                  </button>
+                ))}
               </div>
             </div>
-          )}
-
-          {userRole === "HIGH_SCHOOL_STUDENT" && (
-            <div className="space-y-2 pt-2 text-xs">
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Школа:</span>
-                <span className="font-semibold text-black dark:text-white">РФМШ Астана</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated flex justify-between">
-                <span className="text-apple-gray1">Класс:</span>
-                <span className="font-semibold text-apple-blue">11 класс (ЕНТ / Олимпиады)</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        {/* Trilingual Language Selector */}
-        <div className="apple-glass rounded-3xl p-4 shadow-apple space-y-2">
-          <div className="flex items-center space-x-2 text-xs font-bold text-apple-gray1 uppercase">
-            <Globe className="w-4 h-4 text-apple-blue" />
-            <span>Трёхъязычный интерфейс</span>
           </div>
-          <div className="grid grid-cols-3 gap-2">
+
+          {/* User Role & ERD Attributes */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] overflow-hidden">
+            <div className="px-4 pt-3 pb-1">
+              <span className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wide">
+                {t("studentData")}
+              </span>
+            </div>
             {[
-              { id: "kk", label: "Қазақша" },
-              { id: "ru", label: "Русский" },
-              { id: "en", label: "English" },
-            ].map((l) => (
-              <button
-                key={l.id}
-                onClick={() => setLang(l.id as any)}
-                className={`py-2 rounded-xl text-xs font-semibold ${
-                  lang === l.id
-                    ? "bg-apple-blue text-white"
-                    : "bg-apple-gray6 dark:bg-apple-darkElevated text-black dark:text-white"
+              {
+                label: t("university"),
+                value: "Astana IT University",
+              },
+              {
+                label: t("major"),
+                value: "Software Engineering (SE-2610)",
+              },
+              {
+                label: t("studyStyle"),
+                value: "Solo Deep Work",
+                highlight: true,
+              },
+            ].map((row, idx) => (
+              <div
+                key={idx}
+                className={`flex items-center justify-between px-4 py-3 ${
+                  idx < 2 ? "border-b border-[rgba(60,60,67,0.06)]" : ""
                 }`}
               >
-                {l.label}
-              </button>
+                <span className="text-[15px] text-[#8E8E93]">{row.label}</span>
+                <span
+                  className={`text-[15px] font-medium ${
+                    row.highlight ? "text-[#007AFF]" : "text-[#1C1C1E]"
+                  }`}
+                >
+                  {row.value}
+                </span>
+              </div>
             ))}
           </div>
-        </div>
 
-        {/* Project Info & Team */}
-        <div className="apple-glass rounded-3xl p-4 shadow-apple space-y-1 text-center text-xs text-apple-gray1">
-          <div className="font-bold text-black dark:text-white">SpotFinder — ICT Course Project</div>
-          <div>Astana IT University • SE-2610</div>
-          <div className="text-[10px] text-apple-gray2 pt-1">
-            Разработчики: Ibrahim, Bagymzhan, Alizhan, Nurtas
+          {/* Database & Map Info Card */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-4 space-y-2">
+            <div className="flex items-center space-x-2 text-xs font-bold text-[#1C1C1E]">
+              <Map className="w-4 h-4 text-[#34C759]" />
+              <span>Картографический движок: OpenStreetMap / Leaflet</span>
+            </div>
+            <p className="text-[11px] text-[#8E8E93]">
+              100% бесплатные карты без регистрации и API-ключей с полным покрытием Астаны и Алматы. Навигация в 2ГИС работает в один клик.
+            </p>
+            <div className="pt-1 flex items-center space-x-2 text-[11px] text-[#34C759] font-semibold">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span>База данных: SQLite + Prisma ORM (Таблицы users, study_spots, reviews)</span>
+            </div>
+          </div>
+
+          {/* Authentication Actions */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-3 space-y-2">
+            <div className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wide px-1">
+              {t("authSection")}
+            </div>
+            <div className="flex space-x-2">
+              <button
+                onClick={onOpenAuth}
+                className="flex-1 py-3 rounded-xl bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-95 transition-transform"
+              >
+                <LogIn className="w-4 h-4" />
+                <span>{t("switchAccount")}</span>
+              </button>
+              {user && (
+                <button
+                  onClick={handleLogout}
+                  className="px-4 py-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-bold flex items-center justify-center space-x-1 active:scale-95 transition-transform"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>{t("logoutBtn")}</span>
+                </button>
+              )}
+            </div>
+          </div>
+
+          {/* Project & Team Info */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-4 text-center space-y-1">
+            <div className="text-[15px] font-semibold text-[#1C1C1E]">
+              SpotFinder — Database Systems Course Project
+            </div>
+            <div className="text-[13px] text-[#8E8E93]">
+              Astana IT University • SE-2610
+            </div>
+            <div className="text-[11px] text-[#AEAEB2] pt-1">
+              Разработчики: Ibrahim, Bagymzhan, Alizhan, Nurtas
+            </div>
           </div>
         </div>
       </div>

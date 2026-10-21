@@ -1,17 +1,36 @@
+@import "leaflet/dist/leaflet.css";
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 :root {
-  --apple-blur: rgba(255, 255, 255, 0.82);
-  --apple-border: rgba(60, 60, 67, 0.14);
+  --apple-bg: #F2F2F7;
+  --apple-card: #FFFFFF;
+  --apple-blur: rgba(255, 255, 255, 0.85);
+  --apple-border: rgba(60, 60, 67, 0.12);
+  --apple-separator: rgba(60, 60, 67, 0.18);
+  --apple-text-primary: #1C1C1E;
+  --apple-text-secondary: #8E8E93;
+  --apple-blue: #007AFF;
+  --apple-green: #34C759;
+  --apple-orange: #FF9500;
+  --apple-red: #FF3B30;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --apple-blur: rgba(28, 28, 30, 0.85);
-    --apple-border: rgba(255, 255, 255, 0.12);
-  }
+/* Unified Apple San Francisco Font Across ALL Elements */
+*,
+*::before,
+*::after,
+html,
+body,
+input,
+button,
+select,
+textarea {
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", -apple-system-subheadline, "Segoe UI", Roboto, "Helvetica Neue", sans-serif !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 html,
@@ -22,27 +41,21 @@ body {
   touch-action: manipulation;
   user-select: none;
   -webkit-user-select: none;
-  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", system-ui, sans-serif;
+  background-color: var(--apple-bg);
+  color: var(--apple-text-primary);
 }
 
 /* Apple HIG Frosted Glass */
 .apple-glass {
   background: var(--apple-blur);
-  backdrop-filter: blur(24px) saturate(180%);
-  -webkit-backdrop-filter: blur(24px) saturate(180%);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
   border: 0.5px solid var(--apple-border);
 }
 
 .apple-glass-card {
-  background: rgba(255, 255, 255, 0.95);
-  border: 0.5px solid rgba(60, 60, 67, 0.12);
-}
-
-@media (prefers-color-scheme: dark) {
-  .apple-glass-card {
-    background: rgba(28, 28, 30, 0.95);
-    border: 0.5px solid rgba(255, 255, 255, 0.12);
-  }
+  background: var(--apple-card);
+  border: 0.5px solid rgba(60, 60, 67, 0.08);
 }
 
 /* iOS Safe Area Padding */
@@ -61,4 +74,107 @@ body {
 .no-scrollbar {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+/* iOS Toggle Switch */
+.ios-toggle {
+  position: relative;
+  width: 51px;
+  height: 31px;
+  border-radius: 16px;
+  background-color: #E5E5EA;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+.ios-toggle.active {
+  background-color: #34C759;
+}
+.ios-toggle::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 27px;
+  height: 27px;
+  border-radius: 50%;
+  background: #FFFFFF;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+  transition: transform 0.3s ease;
+}
+.ios-toggle.active::after {
+  transform: translateX(20px);
+}
+
+/* Leaflet Apple HIG Customization & Strict Z-Index Layering */
+.leaflet-container {
+  font-family: inherit !important;
+  background: #EAECEF !important;
+  outline: none;
+  z-index: 0 !important;
+  position: relative !important;
+}
+.leaflet-pane {
+  z-index: 10 !important;
+}
+.leaflet-tile-pane {
+  z-index: 10 !important;
+}
+.leaflet-overlay-pane {
+  z-index: 11 !important;
+}
+.leaflet-marker-pane {
+  z-index: 12 !important;
+}
+.leaflet-tooltip-pane {
+  z-index: 13 !important;
+}
+.leaflet-popup-pane {
+  z-index: 14 !important;
+}
+.leaflet-top,
+.leaflet-bottom {
+  z-index: 15 !important;
+}
+.leaflet-bar {
+  border: none !important;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08) !important;
+  border-radius: 14px !important;
+  overflow: hidden;
+}
+.leaflet-bar a {
+  background-color: rgba(255, 255, 255, 0.95) !important;
+  color: #1C1C1E !important;
+  border-bottom: 0.5px solid rgba(60,60,67,0.1) !important;
+}
+.leaflet-control-attribution {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(10px);
+  font-size: 9px !important;
+  color: #8E8E93 !important;
+  border-top-left-radius: 8px;
+  padding: 1px 6px !important;
+}
+
+/* Custom Leaflet Marker HTML styling */
+.custom-leaflet-marker {
+  background: transparent;
+  border: none;
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-fadeIn {
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+.animate-slideUp {
+  animation: slideUp 0.35s cubic-bezier(0.32, 0.72, 0, 1);
 }

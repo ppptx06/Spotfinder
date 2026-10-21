@@ -18,10 +18,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: "cover",
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#F2F2F7" },
-    { media: "(prefers-color-scheme: dark)", color: "#000000" },
-  ],
+  themeColor: "#F2F2F7",
 };
 
 export default function RootLayout({
@@ -31,7 +28,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ru">
-      <body className="bg-[#F2F2F7] dark:bg-black text-[#1C1C1E] dark:text-[#F2F2F7] antialiased min-h-screen overflow-hidden">
+      <body className="bg-[#F2F2F7] text-[#1C1C1E] antialiased min-h-screen overflow-hidden">
         {children}
       </body>
     </html>

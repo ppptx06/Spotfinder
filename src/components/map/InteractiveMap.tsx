@@ -1,159 +1,362 @@
 "use client";
 
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { StudySpotItem } from "@/types/spot";
-import { BookOpen, Coffee, Presentation, Compass, Plus, Minus } from "lucide-react";
+import { Navigation, Layers, Plus, Minus } from "lucide-react";
 
 interface InteractiveMapProps {
   spots: StudySpotItem[];
   selectedSpot: StudySpotItem | null;
   onSelectSpot: (spot: StudySpotItem) => void;
+  userLocation?: { lat: number; lng: number } | null;
 }
+
+// Astana center coordinates [lat, lng]
+const ASTANA_COORDS: [number, number] = [51.0908, 71.4183];
+
+// 100% Free, No-Registration Tile Layers for Kazakhstan
+const TILE_LAYERS = {
+  osm: {
+    id: "osm",
+    name: "OpenStreetMap",
+    url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+    options: {
+      maxZoom: 19,
+      subdomains: ["a", "b", "c"],
+      attribution: "&copy; OpenStreetMap contributors",
+    },
+  },
+  esri: {
+    id: "esri",
+    name: "Esri Street",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      maxZoom: 19,
+      attribution: "&copy; Esri & OpenStreetMap",
+    },
+  },
+  satellite: {
+    id: "satellite",
+    name: "Спутник",
+    url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    options: {
+      maxZoom: 19,
+      attribution: "&copy; Esri World Imagery",
+    },
+  },
+};
+
+type LayerKey = keyof typeof TILE_LAYERS;
 
 export const InteractiveMap: React.FC<InteractiveMapProps> = ({
   spots,
   selectedSpot,
   onSelectSpot,
+  userLocation,
 }) => {
+  const mapContainerRef = useRef<HTMLDivElement>(null);
+  const mapInstanceRef = useRef<any>(null);
+  const markersLayerRef = useRef<any>(null);
+  const userMarkerRef = useRef<any>(null);
+  const tileLayerRef = useRef<any>(null);
+  const [activeLayer, setActiveLayer] = useState<LayerKey>("osm");
+
+  // Initialize Leaflet Map with OpenStreetMap as default (100% Free, No API key)
+  useEffect(() => {
+    let isMounted = true;
+
+    async function initLeaflet() {
+      if (!mapContainerRef.current || mapInstanceRef.current) return;
+
+      const L = await import("leaflet");
+
+      if (!isMounted || !mapContainerRef.current) return;
+
+      // Delete default marker icon paths to prevent Next.js asset 404
+      delete (L.Icon.Default.prototype as any)._getIconUrl;
+
+      // Create map
+      const map = L.map(mapContainerRef.current, {
+        center: ASTANA_COORDS,
+        zoom: 14,
+        zoomControl: false,
+        attributionControl: false, // Clean minimal Apple style
+      });
+
+      // Add default tile layer: OpenStreetMap Standard
+      const defaultLayerConfig = TILE_LAYERS.osm;
+      const tileLayer = L.tileLayer(
+        defaultLayerConfig.url,
+        defaultLayerConfig.options
+      ).addTo(map);
+
+      tileLayerRef.current = tileLayer;
+
+      // Layer for spot markers
+      const markersGroup = L.layerGroup().addTo(map);
+      markersLayerRef.current = markersGroup;
+      mapInstanceRef.current = map;
+
+      // Force size recalculation to prevent gray unloaded tiles
+      setTimeout(() => {
+        if (map && isMounted) {
+          map.invalidateSize();
+        }
+      }, 150);
+
+      setTimeout(() => {
+        if (map && isMounted) {
+          map.invalidateSize();
+        }
+      }, 500);
+
+      // Render initial markers
+      renderMarkers(L, map, markersGroup, spots, selectedSpot);
+    }
+
+    initLeaflet();
+
+    return () => {
+      isMounted = false;
+      if (mapInstanceRef.current) {
+        mapInstanceRef.current.remove();
+        mapInstanceRef.current = null;
+      }
+    };
+  }, []);
+
+  // Cycle through free tile layers (OSM -> Esri Street -> Satellite)
+  const handleToggleLayer = async () => {
+    if (!mapInstanceRef.current || !tileLayerRef.current) return;
+    const L = await import("leaflet");
+
+    const layersList: LayerKey[] = ["osm", "esri", "satellite"];
+    const nextIndex = (layersList.indexOf(activeLayer) + 1) % layersList.length;
+    const nextKey = layersList[nextIndex];
+    setActiveLayer(nextKey);
+
+    mapInstanceRef.current.removeLayer(tileLayerRef.current);
+
+    const config = TILE_LAYERS[nextKey];
+    const newLayer = L.tileLayer(config.url, config.options).addTo(
+      mapInstanceRef.current
+    );
+
+    tileLayerRef.current = newLayer;
+  };
+
+  // Render Apple-styled HTML markers for study spots
+  const renderMarkers = async (
+    L: any,
+    map: any,
+    group: any,
+    spotsList: StudySpotItem[],
+    selected: StudySpotItem | null
+  ) => {
+    if (!group) return;
+    group.clearLayers();
+
+    spotsList.forEach((spot) => {
+      const isSelected = selected?.id === spot.id;
+
+      const colors: Record<string, string> = {
+        library: "#007AFF",
+        cafe: "#FF9500",
+        studyRoom: "#AF52DE",
+      };
+
+      const icons: Record<string, string> = {
+        library: "📚",
+        cafe: "☕",
+        studyRoom: "💻",
+      };
+
+      const markerColor = colors[spot.spotType] || "#007AFF";
+      const iconEmoji = icons[spot.spotType] || "📍";
+
+      // Apple HIG Card Marker
+      const html = `
+        <div style="
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 5px 10px 5px 6px;
+          background: ${isSelected ? "#007AFF" : "rgba(255, 255, 255, 0.95)"};
+          color: ${isSelected ? "#FFFFFF" : "#1C1C1E"};
+          border-radius: 20px;
+          box-shadow: 0 4px 14px rgba(0,0,0,0.18);
+          border: 1px solid ${isSelected ? "#007AFF" : "rgba(60,60,67,0.12)"};
+          cursor: pointer;
+          white-space: nowrap;
+          transform: scale(${isSelected ? 1.08 : 1});
+          transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+          font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+        ">
+          <div style="
+            width: 22px;
+            height: 22px;
+            border-radius: 50%;
+            background: ${isSelected ? "rgba(255,255,255,0.25)" : markerColor};
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 11px;
+          ">${iconEmoji}</div>
+          <span style="font-size: 11px; font-weight: 600; max-width: 95px; overflow: hidden; text-overflow: ellipsis;">
+            ${spot.name.split(" ").slice(0, 2).join(" ")}
+          </span>
+          <span style="font-size: 10px; font-weight: 700; color: ${
+            isSelected ? "#FFE57F" : "#FF9500"
+          };">
+            ★${spot.overallRating.toFixed(1)}
+          </span>
+        </div>
+      `;
+
+      const customIcon = L.divIcon({
+        html,
+        className: "custom-leaflet-marker",
+        iconSize: [120, 36],
+        iconAnchor: [60, 18],
+      });
+
+      const marker = L.marker([spot.latitude, spot.longitude], {
+        icon: customIcon,
+      });
+
+      marker.on("click", () => {
+        onSelectSpot(spot);
+        if (typeof window !== "undefined" && "vibrate" in navigator) {
+          navigator.vibrate(10);
+        }
+      });
+
+      group.addLayer(marker);
+    });
+  };
+
+  // Re-render markers when spots or selectedSpot changes
+  useEffect(() => {
+    if (!mapInstanceRef.current || !markersLayerRef.current) return;
+    import("leaflet").then((L) => {
+      renderMarkers(
+        L,
+        mapInstanceRef.current,
+        markersLayerRef.current,
+        spots,
+        selectedSpot
+      );
+    });
+  }, [spots, selectedSpot]);
+
+  // Center camera smoothly when selectedSpot changes
+  useEffect(() => {
+    if (selectedSpot && mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo(
+        [selectedSpot.latitude, selectedSpot.longitude],
+        16,
+        { duration: 0.8, easeLinearity: 0.25 }
+      );
+    }
+  }, [selectedSpot]);
+
+  // Render user location marker (pulsing blue radar)
+  useEffect(() => {
+    if (!mapInstanceRef.current || !userLocation) return;
+    import("leaflet").then((L) => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current.remove();
+      }
+
+      const userHtml = `
+        <div style="position: relative; width: 22px; height: 22px;">
+          <div style="position: absolute; inset: -8px; border-radius: 50%; background: rgba(0, 122, 255, 0.25); animation: ping 2s cubic-bezier(0, 0, 0.2, 1) infinite;"></div>
+          <div style="width: 22px; height: 22px; border-radius: 50%; background: #007AFF; border: 3px solid white; box-shadow: 0 2px 8px rgba(0,0,0,0.3);"></div>
+        </div>
+      `;
+
+      const userIcon = L.divIcon({
+        html: userHtml,
+        className: "user-location-marker",
+        iconSize: [22, 22],
+        iconAnchor: [11, 11],
+      });
+
+      userMarkerRef.current = L.marker([userLocation.lat, userLocation.lng], {
+        icon: userIcon,
+      }).addTo(mapInstanceRef.current);
+    });
+  }, [userLocation]);
+
+  // Controls
+  const handleCenterOnUser = () => {
+    if (mapInstanceRef.current && userLocation) {
+      mapInstanceRef.current.flyTo([userLocation.lat, userLocation.lng], 15, {
+        duration: 0.6,
+      });
+    } else if (mapInstanceRef.current) {
+      mapInstanceRef.current.flyTo(ASTANA_COORDS, 14, { duration: 0.6 });
+    }
+  };
+
+  const handleZoomIn = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomIn();
+  };
+
+  const handleZoomOut = () => {
+    if (mapInstanceRef.current) mapInstanceRef.current.zoomOut();
+  };
+
   return (
-    <div className="absolute inset-0 bg-[#E8ECEF] dark:bg-[#121214] overflow-hidden select-none">
-      {/* Apple-style Minimalist Vector Map Simulation Canvas */}
-      <svg
-        className="w-full h-full opacity-60 dark:opacity-30 pointer-events-none"
-        xmlns="http://www.w3.org/2000/svg"
-      >
-        <defs>
-          <pattern id="grid" width="80" height="80" patternUnits="userSpaceOnUse">
-            <path
-              d="M 80 0 L 0 0 0 80"
-              fill="none"
-              stroke="currentColor"
-              className="text-[#D3D8DE] dark:text-[#252528]"
-              strokeWidth="1.2"
-            />
-          </pattern>
-        </defs>
-        <rect width="100%" height="100%" fill="url(#grid)" />
+    /* Strictly isolated z-0 container so Leaflet never bleeds above UI */
+    <div className="absolute inset-0 z-0 isolate overflow-hidden select-none">
+      {/* Map DOM Element */}
+      <div ref={mapContainerRef} className="w-full h-full" />
 
-        {/* Diagonal Arteries (Astana Mangilik El / Kabanbay Batyr style avenues) */}
-        <path
-          d="M -100 250 L 800 650"
-          stroke="#FFFFFF"
-          className="dark:stroke-[#2A2A2E]"
-          strokeWidth="24"
-        />
-        <path
-          d="M -50 450 L 750 150"
-          stroke="#FFFFFF"
-          className="dark:stroke-[#2A2A2E]"
-          strokeWidth="20"
-        />
-        <path
-          d="M 200 -50 L 320 900"
-          stroke="#FFFFFF"
-          className="dark:stroke-[#2A2A2E]"
-          strokeWidth="16"
-        />
-
-        {/* River Ishim / Park Greenery */}
-        <path
-          d="M -50 120 Q 250 80 500 200 T 900 180"
-          fill="none"
-          stroke="#CBE3F8"
-          className="dark:stroke-[#1A2E3D]"
-          strokeWidth="42"
-        />
-        <circle
-          cx="280"
-          cy="380"
-          r="120"
-          fill="#D6EEDB"
-          className="dark:fill-[#1E2E22]"
-        />
-      </svg>
-
-      {/* Floating Apple Map Controls */}
+      {/* Floating Apple Controls (Top Right) */}
       <div className="absolute right-4 top-28 z-20 flex flex-col space-y-2">
+        {/* User Location Button */}
         <button
-          onClick={() => {}}
-          className="w-10 h-10 rounded-2xl apple-glass flex items-center justify-center text-black dark:text-white shadow-apple active:scale-90 transition-transform"
+          onClick={handleCenterOnUser}
+          title="Где я"
+          className="w-10 h-10 rounded-2xl bg-white/95 backdrop-blur-xl flex items-center justify-center shadow-apple-elevated border border-[rgba(60,60,67,0.08)] active:scale-90 transition-transform"
         >
-          <Compass className="w-5 h-5 text-apple-blue" />
+          <Navigation className="w-5 h-5 text-[#007AFF]" />
         </button>
-        <div className="rounded-2xl apple-glass shadow-apple flex flex-col overflow-hidden">
-          <button className="w-10 h-10 flex items-center justify-center text-black dark:text-white border-b border-apple-border active:bg-black/5">
+
+        {/* Free Map Layer Switcher: OSM / Esri / Satellite */}
+        <button
+          onClick={handleToggleLayer}
+          title="Сменить слой карты"
+          className="w-10 h-10 rounded-2xl bg-white/95 backdrop-blur-xl flex items-center justify-center shadow-apple-elevated border border-[rgba(60,60,67,0.08)] active:scale-90 transition-transform"
+        >
+          <Layers className="w-5 h-5 text-[#007AFF]" />
+        </button>
+
+        {/* Zoom In / Out */}
+        <div className="rounded-2xl bg-white/95 backdrop-blur-xl shadow-apple-elevated border border-[rgba(60,60,67,0.08)] flex flex-col overflow-hidden">
+          <button
+            onClick={handleZoomIn}
+            className="w-10 h-10 flex items-center justify-center text-[#1C1C1E] border-b border-[rgba(60,60,67,0.08)] active:bg-[#F2F2F7]"
+          >
             <Plus className="w-4 h-4" />
           </button>
-          <button className="w-10 h-10 flex items-center justify-center text-black dark:text-white active:bg-black/5">
+          <button
+            onClick={handleZoomOut}
+            className="w-10 h-10 flex items-center justify-center text-[#1C1C1E] active:bg-[#F2F2F7]"
+          >
             <Minus className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* User Geolocation Radar Marker */}
-      <div
-        className="absolute z-20 -translate-x-1/2 -translate-y-1/2 pointer-events-none"
-        style={{ left: "48%", top: "42%" }}
-      >
-        <div className="w-6 h-6 rounded-full bg-apple-blue/25 animate-ping absolute -inset-0" />
-        <div className="relative w-4 h-4 rounded-full bg-apple-blue border-2 border-white shadow-md" />
+      {/* Free Kazakhstan Map Attribution & Active Layer Badge */}
+      <div className="absolute left-4 bottom-[50vh] z-20">
+        <div className="px-3 py-1.5 bg-white/95 backdrop-blur-xl rounded-full text-[11px] font-semibold text-[#1C1C1E] shadow-apple border border-[rgba(60,60,67,0.08)] flex items-center space-x-1.5">
+          <span className="w-2 h-2 rounded-full bg-[#34C759]" />
+          <span>{TILE_LAYERS[activeLayer].name} • Астана</span>
+        </div>
       </div>
-
-      {/* StudySpot Interactive Pins */}
-      {spots.map((spot, index) => {
-        const isSelected = selectedSpot?.id === spot.id;
-
-        // Spread pins gracefully across the map view
-        const positions = [
-          { left: "46%", top: "35%" }, // AITU
-          { left: "28%", top: "48%" }, // NU
-          { left: "68%", top: "32%" }, // Espresso Bar
-          { left: "62%", top: "46%" }, // SmArt.Point
-          { left: "75%", top: "25%" }, // Nat. Library
-        ];
-
-        const pos = positions[index % positions.length];
-
-        const pinIcon = {
-          library: BookOpen,
-          cafe: Coffee,
-          studyRoom: Presentation,
-        }[spot.spotType];
-
-        const Icon = pinIcon;
-
-        return (
-          <div
-            key={spot.id}
-            onClick={() => onSelectSpot(spot)}
-            className="absolute z-20 -translate-x-1/2 -translate-y-1/2 cursor-pointer transition-all duration-300"
-            style={{ left: pos.left, top: pos.top }}
-          >
-            <div
-              className={`flex items-center space-x-1.5 px-2.5 py-1.5 rounded-full shadow-apple-elevated transition-transform duration-200 active:scale-90 ${
-                isSelected
-                  ? "bg-apple-blue text-white ring-4 ring-apple-blue/30 scale-110"
-                  : "apple-glass text-black dark:text-white hover:scale-105"
-              }`}
-            >
-              <div
-                className={`w-5 h-5 rounded-full flex items-center justify-center text-white ${
-                  spot.spotType === "library"
-                    ? "bg-blue-500"
-                    : spot.spotType === "cafe"
-                    ? "bg-amber-500"
-                    : "bg-purple-500"
-                }`}
-              >
-                <Icon className="w-3 h-3 stroke-[2.2]" />
-              </div>
-              <span className="text-[11px] font-bold whitespace-nowrap max-w-[110px] truncate">
-                {spot.name.split(" ")[0]}
-              </span>
-            </div>
-          </div>
-        );
-      })}
     </div>
   );
 };

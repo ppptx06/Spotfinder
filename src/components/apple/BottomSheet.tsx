@@ -30,15 +30,15 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
   return (
     <div
-      className={`fixed bottom-0 left-0 right-0 z-20 apple-glass rounded-t-[32px] shadow-apple-sheet transition-all duration-300 ease-out flex flex-col ${heightClasses} pb-16`}
+      className={`fixed bottom-0 left-0 right-0 z-30 bg-white/95 backdrop-blur-2xl rounded-t-[28px] shadow-apple-sheet border-t border-[rgba(60,60,67,0.08)] transition-all duration-300 ease-out flex flex-col ${heightClasses} pb-16`}
     >
       {/* Draggable Notch / Handle */}
       <div
         onClick={toggleHeight}
         className="w-full pt-3 pb-2 flex flex-col items-center justify-center cursor-pointer select-none active:opacity-70"
       >
-        <div className="w-10 h-1.5 bg-apple-gray3 dark:bg-apple-gray1 rounded-full mb-1" />
-        <div className="flex items-center text-[10px] text-apple-gray1 font-medium">
+        <div className="w-9 h-[5px] bg-[#D1D1D6] rounded-full mb-1" />
+        <div className="flex items-center text-[10px] text-[#8E8E93] font-medium">
           {heightState === "collapsed" && (
             <span className="flex items-center">
               Развернуть список <ChevronUp className="w-3 h-3 ml-0.5" />
@@ -54,7 +54,7 @@ export const BottomSheet: React.FC<BottomSheetProps> = ({
 
       {/* Header (e.g. Segmented Control / Filters) */}
       {headerContent && (
-        <div className="px-4 pb-2 border-b border-apple-border shrink-0">
+        <div className="px-4 pb-2 border-b border-[rgba(60,60,67,0.08)] shrink-0">
           {headerContent}
         </div>
       )}

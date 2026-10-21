@@ -1,8 +1,8 @@
 "use client";
 
-import React from "react";
-import { X, Check } from "lucide-react";
+import React, { useEffect } from "react";
 import { NoiseCategory } from "@/types/spot";
+import { Language, useTranslation } from "@/lib/i18n";
 
 export interface FilterState {
   noiseCategory: NoiseCategory | "ALL";
@@ -17,6 +17,7 @@ interface FilterModalProps {
   filters: FilterState;
   setFilters: React.Dispatch<React.SetStateAction<FilterState>>;
   onReset: () => void;
+  lang: Language;
 }
 
 export const FilterModal: React.FC<FilterModalProps> = ({
@@ -25,37 +26,62 @@ export const FilterModal: React.FC<FilterModalProps> = ({
   filters,
   setFilters,
   onReset,
+  lang,
 }) => {
+  const t = useTranslation(lang);
+
+  // Handle hardware back button
+  useEffect(() => {
+    if (!isOpen) return;
+    window.history.pushState({ modal: "filters" }, "");
+    const handlePop = () => onClose();
+    window.addEventListener("popstate", handlePop);
+    return () => window.removeEventListener("popstate", handlePop);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
+  const handleClose = () => {
+    if (window.history.state?.modal === "filters") {
+      window.history.back();
+    } else {
+      onClose();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/40 backdrop-blur-sm animate-fadeIn">
-      <div className="w-full max-w-md bg-white dark:bg-[#1C1C1E] rounded-t-3xl sm:rounded-3xl p-5 shadow-2xl border-t sm:border border-apple-border space-y-5">
-        {/* Header */}
-        <div className="flex items-center justify-between border-b border-apple-border pb-3">
-          <button onClick={onReset} className="text-xs font-semibold text-apple-gray1 hover:text-black dark:hover:text-white">
-            Сбросить
-          </button>
-          <h3 className="text-sm font-bold text-black dark:text-white">Фильтры для учёбы</h3>
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/30 backdrop-blur-sm animate-fadeIn">
+      <div className="w-full max-w-md bg-white rounded-t-[28px] p-5 shadow-2xl border-t border-[rgba(60,60,67,0.08)] space-y-5 animate-slideUp">
+        {/* Header — iOS Form Sheet Style */}
+        <div className="flex items-center justify-between pb-3 border-b border-[rgba(60,60,67,0.08)]">
           <button
-            onClick={onClose}
-            className="w-7 h-7 rounded-full bg-apple-gray5 dark:bg-apple-darkElevated flex items-center justify-center text-apple-gray1 active:scale-90"
+            onClick={() => onReset()}
+            className="text-sm font-normal text-[#007AFF]"
           >
-            <X className="w-4 h-4" />
+            {t("reset")}
+          </button>
+          <h3 className="text-[15px] font-semibold text-[#1C1C1E]">
+            {t("filtersTitle")}
+          </h3>
+          <button
+            onClick={handleClose}
+            className="text-sm font-semibold text-[#007AFF]"
+          >
+            {t("done")}
           </button>
         </div>
 
         {/* Noise Filter */}
-        <div className="space-y-2">
-          <label className="text-xs font-bold text-apple-gray1 uppercase tracking-wide">
-            Уровень шума в помещении
+        <div className="space-y-2.5">
+          <label className="text-[13px] font-semibold text-[#1C1C1E]">
+            {t("noiseLabel")}
           </label>
           <div className="grid grid-cols-4 gap-2">
             {[
-              { id: "ALL", label: "Любой" },
-              { id: "SILENT", label: "Тихий (<35дБ)" },
-              { id: "QUIET", label: "Умеренно" },
-              { id: "LIVELY", label: "Оживлённо" },
+              { id: "ALL", label: t("any") },
+              { id: "SILENT", label: t("noiseSilent") },
+              { id: "QUIET", label: t("noiseQuiet") },
+              { id: "LIVELY", label: t("noiseLively") },
             ].map((n) => (
               <button
                 key={n.id}
@@ -65,10 +91,10 @@ export const FilterModal: React.FC<FilterModalProps> = ({
                     noiseCategory: n.id as NoiseCategory | "ALL",
                   }))
                 }
-                className={`py-2 px-2 rounded-xl text-xs font-semibold transition-all ${
+                className={`py-2.5 px-2 rounded-xl text-xs font-medium transition-all ${
                   filters.noiseCategory === n.id
-                    ? "bg-apple-blue text-white shadow-sm"
-                    : "bg-apple-gray6 dark:bg-apple-darkElevated text-black dark:text-white"
+                    ? "bg-[#007AFF] text-white font-semibold"
+                    : "bg-[#F2F2F7] text-[#1C1C1E]"
                 }`}
               >
                 {n.label}
@@ -77,74 +103,75 @@ export const FilterModal: React.FC<FilterModalProps> = ({
           </div>
         </div>
 
-        {/* Minimum Wi-Fi Speed */}
-        <div className="space-y-2">
-          <div className="flex justify-between text-xs">
-            <span className="font-bold text-apple-gray1 uppercase">Скорость Wi-Fi</span>
-            <span className="font-semibold text-apple-blue">
-              {filters.minWifiSpeed === 0 ? "Любая" : `от ${filters.minWifiSpeed} Мб/с`}
+        {/* Wi-Fi Speed */}
+        <div className="space-y-2.5">
+          <div className="flex justify-between">
+            <span className="text-[13px] font-semibold text-[#1C1C1E]">
+              {t("wifiSpeed")}
+            </span>
+            <span className="text-[13px] font-normal text-[#007AFF]">
+              {filters.minWifiSpeed === 0
+                ? t("any")
+                : `от ${filters.minWifiSpeed} Мб/с`}
             </span>
           </div>
           <div className="grid grid-cols-4 gap-2">
             {[0, 50, 100, 200].map((speed) => (
               <button
                 key={speed}
-                onClick={() => setFilters((prev) => ({ ...prev, minWifiSpeed: speed }))}
-                className={`py-2 rounded-xl text-xs font-semibold ${
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, minWifiSpeed: speed }))
+                }
+                className={`py-2.5 rounded-xl text-xs font-medium transition-all ${
                   filters.minWifiSpeed === speed
-                    ? "bg-apple-blue text-white"
-                    : "bg-apple-gray6 dark:bg-apple-darkElevated text-black dark:text-white"
+                    ? "bg-[#007AFF] text-white font-semibold"
+                    : "bg-[#F2F2F7] text-[#1C1C1E]"
                 }`}
               >
-                {speed === 0 ? "Любая" : `${speed}+ Мб/с`}
+                {speed === 0 ? t("any") : `${speed}+`}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Toggles */}
-        <div className="space-y-3 pt-1 border-t border-apple-border">
+        {/* iOS Toggle Rows */}
+        <div className="space-y-0 border-t border-[rgba(60,60,67,0.08)] pt-3">
           <div
             onClick={() =>
-              setFilters((prev) => ({ ...prev, outletsRequired: !prev.outletsRequired }))
+              setFilters((prev) => ({
+                ...prev,
+                outletsRequired: !prev.outletsRequired,
+              }))
             }
-            className="flex items-center justify-between p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated cursor-pointer"
+            className="flex items-center justify-between py-3 cursor-pointer"
           >
-            <span className="text-xs font-semibold text-black dark:text-white">
-              Много свободных розеток
-            </span>
+            <span className="text-[15px] text-[#1C1C1E]">{t("manyOutlets")}</span>
             <div
-              className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
-                filters.outletsRequired ? "bg-apple-blue text-white" : "border border-apple-gray3"
-              }`}
-            >
-              {filters.outletsRequired && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </div>
+              className={`ios-toggle ${filters.outletsRequired ? "active" : ""}`}
+            />
           </div>
 
+          <div className="border-t border-[rgba(60,60,67,0.08)]" />
+
           <div
-            onClick={() => setFilters((prev) => ({ ...prev, freeOnly: !prev.freeOnly }))}
-            className="flex items-center justify-between p-3 rounded-2xl bg-apple-gray6 dark:bg-apple-darkElevated cursor-pointer"
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, freeOnly: !prev.freeOnly }))
+            }
+            className="flex items-center justify-between py-3 cursor-pointer"
           >
-            <span className="text-xs font-semibold text-black dark:text-white">
-              Бесплатный вход (без обязательного заказа)
+            <span className="text-[15px] text-[#1C1C1E]">
+              {t("freeEntrance")}
             </span>
-            <div
-              className={`w-5 h-5 rounded-md flex items-center justify-center transition-colors ${
-                filters.freeOnly ? "bg-apple-blue text-white" : "border border-apple-gray3"
-              }`}
-            >
-              {filters.freeOnly && <Check className="w-3.5 h-3.5 stroke-[3]" />}
-            </div>
+            <div className={`ios-toggle ${filters.freeOnly ? "active" : ""}`} />
           </div>
         </div>
 
         {/* Apply Button */}
         <button
-          onClick={onClose}
-          className="w-full py-3 rounded-2xl bg-apple-blue text-white font-bold text-sm shadow-md active:scale-98 transition-all"
+          onClick={handleClose}
+          className="w-full py-3.5 rounded-2xl bg-[#007AFF] text-white font-semibold text-[15px] active:opacity-80 transition-all"
         >
-          Применить фильтры
+          {t("showResults")}
         </button>
       </div>
     </div>

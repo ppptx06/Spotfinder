@@ -1,0 +1,190 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum UserType {
+  STUDENT
+  REMOTE_WORKER
+  HIGH_SCHOOL_STUDENT
+  ADMIN
+}
+
+enum AdminAccessLevel {
+  MODERATOR
+  CONTENT_MANAGER
+  SUPERADMIN
+}
+
+model User {
+  id           Int       @id @default(autoincrement()) @map("user_id")
+  name         String    @db.VarChar(100)
+  email        String    @unique @db.VarChar(150)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  userType     UserType  @map("user_type")
+  createdAt    DateTime  @default(now()) @map("created_at")
+  isVerified   Boolean   @default(false) @map("is_verified")
+
+  adminProfile Admin?
+  reviews      Review[]
+
+  @@map("users")
+}
+
+model Admin {
+  id          Int              @id @default(autoincrement()) @map("admin_id")
+  userId      Int              @unique @map("user_id")
+  accessLevel AdminAccessLevel @default(MODERATOR) @map("access_level")
+  user        User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  moderatedReviews Review[] @relation("AdminModerated")
+
+  @@map("admins")
+}
+
+model StudySpot {
+  id             Int      @id @default(autoincrement()) @map("spot_id")
+  name           String   @db.VarChar(150)
+  address        String   @db.VarChar(255)
+  operatingHours String?  @map("operating_hours") @db.VarChar(100)
+  latitude       Decimal  @db.Decimal(9, 6)
+  longitude      Decimal  @db.Decimal(9, 6)
+  overallRating  Float    @default(0.0) @map("overall_rating")
+  imageUrl       String?  @map("image_url") @db.VarChar(500)
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  // Subtypes
+  library   Library?
+  cafe      Cafe?
+  studyRoom StudyRoom?
+
+  // Infrastructure metrics
+  wifiInfo   WifiInfo?
+  seating    Seating?
+  noiseLevel NoiseLevel?
+  outlets    Outlet[]
+  reviews    Review[]
+
+  @@index([latitude, longitude], name: "idx_spot_geo")
+  @@map("study_spots")
+}
+
+model Library {
+  spotId            Int      @id @map("spot_id")
+  silentStudyArea   Boolean  @default(true) @map("silent_study_area")
+  bookReservation   Boolean  @default(false) @map("book_reservation")
+  publicAccess      Boolean  @default(true) @map("public_access")
+  floorCount        Int      @default(1) @map("floor_count")
+  campusAffiliation String?  @map("campus_affiliation") @db.VarChar(100)
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("libraries")
+}
+
+enum OutletAvailability {
+  NONE
+  FEW
+  ABUNDANT
+}
+
+model Cafe {
+  spotId             Int                @id @map("spot_id")
+  outletAvailability OutletAvailability @default(FEW) @map("outlet_availability")
+  avgCoffeePrice     Decimal?           @map("avg_coffee_price") @db.Decimal(8, 2)
+  minOrderRequired   Boolean            @default(false) @map("min_order_required")
+  hasFoodMenu        Boolean            @default(true) @map("has_food_menu")
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("cafes")
+}
+
+model StudyRoom {
+  spotId            Int      @id @map("spot_id")
+  maxCapacity       Int      @map("max_capacity")
+  reservationPolicy String?  @map("reservation_policy") @db.VarChar(100)
+  hasWhiteboard     Boolean  @default(true) @map("has_whiteboard")
+  hasProjector      Boolean  @default(false) @map("has_projector")
+  hourlyRate        Decimal  @default(0.00) @map("hourly_rate") @db.Decimal(8, 2)
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("study_rooms")
+}
+
+model WifiInfo {
+  id            Int     @id @default(autoincrement()) @map("wifi_id")
+  spotId        Int     @unique @map("spot_id")
+  speedMbps     Float?  @map("speed_mbps")
+  securityType  String? @map("security_type") @db.VarChar(50)
+  qualityRating Int?    @map("quality_rating")
+  isFree        Boolean @default(true) @map("is_free")
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("wifi_info")
+}
+
+model Outlet {
+  id         Int     @id @default(autoincrement()) @map("outlet_id")
+  spotId     Int     @map("spot_id")
+  type       String  @db.VarChar(50)
+  count      Int     @default(0)
+  accessible Boolean @default(true)
+  isWorking  Boolean @default(true) @map("is_working")
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("outlets")
+}
+
+model Seating {
+  id             Int     @id @default(autoincrement()) @map("seating_id")
+  spotId         Int     @unique @map("spot_id")
+  availableSeats Int     @default(0) @map("available_seats")
+  totalSeats     Int     @map("total_seats")
+  comfortLevel   String? @map("comfort_level") @db.VarChar(50)
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("seating")
+}
+
+enum NoiseCategory {
+  SILENT
+  QUIET
+  LIVELY
+}
+
+model NoiseLevel {
+  id            Int           @id @default(autoincrement()) @map("noise_id")
+  spotId        Int           @unique @map("spot_id")
+  decibelLevel  Int?          @map("decibel_level")
+  noiseCategory NoiseCategory @default(QUIET) @map("noise_category")
+
+  spot StudySpot @relation(fields: [spotId], references: [id], onDelete: Cascade)
+
+  @@map("noise_levels")
+}
+
+model Review {
+  id            Int      @id @default(autoincrement()) @map("review_id")
+  userId        Int?     @map("user_id")
+  spotId        Int      @map("spot_id")
+  comment       String?  @db.Text
+  rating        Float
+  timestamp     DateTime @default(now())
+  isApproved    Boolean  @default(true) @map("is_approved")
+  moderatedById Int?     @map("moderated_by_id")
+
+  user        User?      @relation(fields: [userId], references: [id], onDelete: SetNull)
+  spot        StudySpot  @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  moderatedBy Admin?     @relation("AdminModerated", fields: [moderatedById], references: [id])
+
+  @@map("reviews")
+}

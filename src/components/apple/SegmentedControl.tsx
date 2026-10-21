@@ -20,7 +20,7 @@ export function SegmentedControl<T extends string>({
   onChange,
 }: SegmentedControlProps<T>) {
   return (
-    <div className="flex p-1 bg-apple-gray5/70 dark:bg-[#2C2C2E]/80 backdrop-blur-md rounded-xl space-x-1">
+    <div className="flex p-1 bg-[#E5E5EA]/70 rounded-xl space-x-0.5">
       {options.map((opt) => {
         const isSelected = value === opt.value;
         return (
@@ -34,11 +34,11 @@ export function SegmentedControl<T extends string>({
             }}
             className={`flex-1 flex items-center justify-center space-x-1 py-1.5 px-3 text-xs font-medium rounded-lg transition-all duration-200 ${
               isSelected
-                ? "bg-white dark:bg-[#1C1C1E] text-black dark:text-white shadow-sm font-semibold scale-[1.01]"
-                : "text-apple-gray1 hover:text-black dark:hover:text-white"
+                ? "bg-white text-[#1C1C1E] shadow-sm font-semibold"
+                : "text-[#8E8E93]"
             }`}
           >
-            {opt.icon && <span className="mr-1">{opt.icon}</span>}
+            {opt.icon && <span className="mr-0.5">{opt.icon}</span>}
             <span>{opt.label}</span>
           </button>
         );

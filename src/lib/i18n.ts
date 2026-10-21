@@ -357,9 +357,9 @@ export const translations = {
 
   // Admin Panel
   adminHeading: {
-    kk: "Әкімші тақтасы — Деректерді басқару",
-    ru: "Панель администратора — Управление БД",
-    en: "Admin Panel — Database Management",
+    kk: "Әкімші тақтасы — Орындарды басқару",
+    ru: "Панель администратора — Управление",
+    en: "Admin Panel — Spot Management",
   },
   addNewSpotBtn: {
     kk: "+ Жаңа орын қосу",

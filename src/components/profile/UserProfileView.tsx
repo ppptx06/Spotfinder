@@ -18,7 +18,7 @@ import {
   Map,
 } from "lucide-react";
 import { Language, useTranslation, setLanguage } from "@/lib/i18n";
-import { getCurrentUser, logout, AuthUser } from "@/lib/auth";
+import { getCurrentUser, setCurrentUser, DEMO_USERS, logout, AuthUser } from "@/lib/auth";
 
 interface UserProfileViewProps {
   onBack: () => void;
@@ -114,6 +114,51 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             </div>
           </div>
 
+          {/* Quick Demo Role Switcher */}
+          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-4 space-y-3">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wide">
+                Режим доступа
+              </span>
+              <span className="text-[11px] font-semibold text-[#007AFF]">
+                Демо-переключение
+              </span>
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() => {
+                  const u = DEMO_USERS.student;
+                  setCurrentUser(u);
+                  setUser(u);
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1 transition-all ${
+                  !user?.isAdmin
+                    ? "bg-[#007AFF]/10 border-[#007AFF] text-[#007AFF] font-bold"
+                    : "bg-[#F2F2F7] border-transparent text-[#8E8E93]"
+                }`}
+              >
+                <GraduationCap className="w-5 h-5" />
+                <span className="text-xs">Студент</span>
+              </button>
+
+              <button
+                onClick={() => {
+                  const u = DEMO_USERS.admin;
+                  setCurrentUser(u);
+                  setUser(u);
+                }}
+                className={`p-3 rounded-xl border flex flex-col items-center justify-center space-y-1 transition-all ${
+                  user?.isAdmin
+                    ? "bg-[#007AFF] border-[#007AFF] text-white font-bold shadow-apple"
+                    : "bg-[#F2F2F7] border-transparent text-[#8E8E93]"
+                }`}
+              >
+                <ShieldAlert className="w-5 h-5" />
+                <span className="text-xs">Администратор</span>
+              </button>
+            </div>
+          </div>
+
           {/* Admin Panel Quick Access Button */}
           {user?.isAdmin && (
             <button
@@ -127,7 +172,7 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
                 <div className="text-left">
                   <div className="text-sm font-bold">{t("adminPanelBtn")}</div>
                   <div className="text-[11px] text-white/80">
-                    Добавление, редактирование и удаление точек в SQLite
+                    Управление локациями, местами и отзывами
                   </div>
                 </div>
               </div>
@@ -219,56 +264,13 @@ export const UserProfileView: React.FC<UserProfileViewProps> = ({
             ))}
           </div>
 
-          {/* Database & Map Info Card */}
-          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-4 space-y-2">
-            <div className="flex items-center space-x-2 text-xs font-bold text-[#1C1C1E]">
-              <Map className="w-4 h-4 text-[#34C759]" />
-              <span>Картографический движок: OpenStreetMap / Leaflet</span>
-            </div>
-            <p className="text-[11px] text-[#8E8E93]">
-              100% бесплатные карты без регистрации и API-ключей с полным покрытием Астаны и Алматы. Навигация в 2ГИС работает в один клик.
-            </p>
-            <div className="pt-1 flex items-center space-x-2 text-[11px] text-[#34C759] font-semibold">
-              <CheckCircle className="w-3.5 h-3.5" />
-              <span>База данных: SQLite + Prisma ORM (Таблицы users, study_spots, reviews)</span>
-            </div>
-          </div>
-
-          {/* Authentication Actions */}
-          <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-3 space-y-2">
-            <div className="text-[11px] font-bold text-[#8E8E93] uppercase tracking-wide px-1">
-              {t("authSection")}
-            </div>
-            <div className="flex space-x-2">
-              <button
-                onClick={onOpenAuth}
-                className="flex-1 py-3 rounded-xl bg-[#007AFF]/10 text-[#007AFF] text-xs font-bold flex items-center justify-center space-x-1.5 active:scale-95 transition-transform"
-              >
-                <LogIn className="w-4 h-4" />
-                <span>{t("switchAccount")}</span>
-              </button>
-              {user && (
-                <button
-                  onClick={handleLogout}
-                  className="px-4 py-3 rounded-xl bg-[#FF3B30]/10 text-[#FF3B30] text-xs font-bold flex items-center justify-center space-x-1 active:scale-95 transition-transform"
-                >
-                  <LogOut className="w-4 h-4" />
-                  <span>{t("logoutBtn")}</span>
-                </button>
-              )}
-            </div>
-          </div>
-
           {/* Project & Team Info */}
           <div className="bg-white rounded-2xl shadow-apple border border-[rgba(60,60,67,0.04)] p-4 text-center space-y-1">
             <div className="text-[15px] font-semibold text-[#1C1C1E]">
-              SpotFinder — Database Systems Course Project
+              SpotFinder
             </div>
             <div className="text-[13px] text-[#8E8E93]">
-              Astana IT University • SE-2610
-            </div>
-            <div className="text-[11px] text-[#AEAEB2] pt-1">
-              Разработчики: Ibrahim, Bagymzhan, Alizhan, Nurtas
+              Astana IT University
             </div>
           </div>
         </div>

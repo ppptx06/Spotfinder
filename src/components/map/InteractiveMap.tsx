@@ -18,21 +18,21 @@ const ASTANA_COORDS: [number, number] = [51.0908, 71.4183];
 const TILE_LAYERS = {
   osm: {
     id: "osm",
-    name: "OpenStreetMap",
+    name: "Схема",
     url: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     options: {
       maxZoom: 19,
       subdomains: ["a", "b", "c"],
-      attribution: "&copy; OpenStreetMap contributors",
+      attribution: "",
     },
   },
   esri: {
     id: "esri",
-    name: "Esri Street",
+    name: "Улицы",
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}",
     options: {
       maxZoom: 19,
-      attribution: "&copy; Esri & OpenStreetMap",
+      attribution: "",
     },
   },
   satellite: {
@@ -41,7 +41,7 @@ const TILE_LAYERS = {
     url: "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     options: {
       maxZoom: 19,
-      attribution: "&copy; Esri World Imagery",
+      attribution: "",
     },
   },
 };
@@ -350,7 +350,7 @@ export const InteractiveMap: React.FC<InteractiveMapProps> = ({
         </div>
       </div>
 
-      {/* Free Kazakhstan Map Attribution & Active Layer Badge */}
+      {/* Active Layer Badge */}
       <div className="absolute left-4 bottom-[50vh] z-20">
         <div className="px-3 py-1.5 bg-white/95 backdrop-blur-xl rounded-full text-[11px] font-semibold text-[#1C1C1E] shadow-apple border border-[rgba(60,60,67,0.08)] flex items-center space-x-1.5">
           <span className="w-2 h-2 rounded-full bg-[#34C759]" />

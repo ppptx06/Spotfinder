@@ -148,12 +148,7 @@ body {
   border-bottom: 0.5px solid rgba(60,60,67,0.1) !important;
 }
 .leaflet-control-attribution {
-  background: rgba(255, 255, 255, 0.7) !important;
-  backdrop-filter: blur(10px);
-  font-size: 9px !important;
-  color: #8E8E93 !important;
-  border-top-left-radius: 8px;
-  padding: 1px 6px !important;
+  display: none !important;
 }
 
 /* Custom Leaflet Marker HTML styling */

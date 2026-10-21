@@ -8,7 +8,19 @@ import { BottomSheet } from "@/components/apple/BottomSheet";
 import { SpotCard } from "@/components/spots/SpotCard";
 import { SpotDetailModal } from "@/components/spots/SpotDetailModal";
 import { FilterModal, FilterState } from "@/components/apple/FilterModal";
-import { InteractiveMap } from "@/components/map/InteractiveMap";
+import dynamic from "next/dynamic";
+
+const InteractiveMap = dynamic(
+  () => import("@/components/map/InteractiveMap").then((m) => m.InteractiveMap),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 bg-[#EAECEF] flex items-center justify-center">
+        <div className="w-6 h-6 rounded-full border-2 border-[#007AFF] border-t-transparent animate-spin" />
+      </div>
+    ),
+  }
+);
 import { UserProfileView } from "@/components/profile/UserProfileView";
 import { SavedSpotsView } from "@/components/saved/SavedSpotsView";
 import { AdminManagementView } from "@/components/admin/AdminManagementView";

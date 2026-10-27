@@ -406,6 +406,82 @@ export const translations = {
     ru: "Отмена",
     en: "Cancel",
   },
+
+  // Smart Pills & Scenarios
+  smartAll: {
+    kk: "Барлығы",
+    ru: "Все",
+    en: "All",
+  },
+  smartFocus: {
+    kk: "Тыныш фокус",
+    ru: "Тихий фокус",
+    en: "Deep Focus",
+  },
+  smartPower: {
+    kk: "Розеткалар 220V",
+    ru: "Много розеток",
+    en: "Power Hub",
+  },
+  smartCoffee: {
+    kk: "Кофе және жұмыс",
+    ru: "Кофе + код",
+    en: "Coffee & Code",
+  },
+  smartFastWifi: {
+    kk: "Жылдам Wi-Fi",
+    ru: "Wi-Fi > 100 Мб/с",
+    en: "Fast Wi-Fi",
+  },
+  smartOpenNow: {
+    kk: "Қазір ашық",
+    ru: "Открыто сейчас",
+    en: "Open Now",
+  },
+
+  // Spotlight Command Palette
+  commandTitle: {
+    kk: "Spotlight жылдам іздеуі",
+    ru: "Умный поиск Spotlight",
+    en: "Spotlight Quick Search",
+  },
+  commandPlaceholder: {
+    kk: "Орынды, мекенжайды немесе ЖОО (AITU, NU...) іздеу...",
+    ru: "Поиск места, адреса или университета (AITU, NU...)",
+    en: "Search spot, address or campus...",
+  },
+  commandHint: {
+    kk: "Таңдау үшін ↵, жабу үшін Esc",
+    ru: "Нажмите ↵ для выбора, Esc для закрытия",
+    en: "Press ↵ to select, Esc to close",
+  },
+  commandNoResults: {
+    kk: "Орындар табылмады",
+    ru: "Мест не найдено",
+    en: "No spots found",
+  },
+  commandScenarios: {
+    kk: "Ақылды сценарийлер",
+    ru: "Умные сценарии",
+    en: "Smart Scenarios",
+  },
+
+  // Study Fit Score & Details
+  fitScore: {
+    kk: "Оқу индексі",
+    ru: "Study Fit Score",
+    en: "Study Fit Score",
+  },
+  peakHours: {
+    kk: "Сағат бойынша жүктеме",
+    ru: "Пиковые часы и загрузка",
+    en: "Peak Hours & Crowd",
+  },
+  routeYandex: {
+    kk: "Яндекс Карталар",
+    ru: "Яндекс Карты",
+    en: "Yandex Maps",
+  },
 };
 
 const LANG_KEY = "spotfinder_lang";

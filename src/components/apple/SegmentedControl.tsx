@@ -1,6 +1,7 @@
 "use client";
 
 import React from "react";
+import { motion } from "framer-motion";
 
 interface Option<T> {
   value: T;
@@ -20,7 +21,7 @@ export function SegmentedControl<T extends string>({
   onChange,
 }: SegmentedControlProps<T>) {
   return (
-    <div className="flex p-1 bg-[#E5E5EA]/70 rounded-xl space-x-0.5">
+    <div className="relative flex p-1 bg-[#E5E5EA]/80 backdrop-blur-md rounded-xl space-x-1 border border-[rgba(60,60,67,0.06)]">
       {options.map((opt) => {
         const isSelected = value === opt.value;
         return (
@@ -32,14 +33,19 @@ export function SegmentedControl<T extends string>({
               }
               onChange(opt.value);
             }}
-            className={`flex-1 flex items-center justify-center space-x-1 py-1.5 px-3 text-xs font-medium rounded-lg transition-all duration-200 ${
-              isSelected
-                ? "bg-white text-[#1C1C1E] shadow-sm font-semibold"
-                : "text-[#8E8E93]"
+            className={`relative flex-1 flex items-center justify-center space-x-1.5 py-1.5 px-3 text-xs font-medium rounded-lg transition-colors duration-150 z-10 ${
+              isSelected ? "text-[#1C1C1E] font-semibold" : "text-[#8E8E93] hover:text-[#1C1C1E]"
             }`}
           >
-            {opt.icon && <span className="mr-0.5">{opt.icon}</span>}
-            <span>{opt.label}</span>
+            {isSelected && (
+              <motion.div
+                layoutId="segmentedIndicator"
+                className="absolute inset-0 bg-white rounded-lg shadow-sm border border-[rgba(60,60,67,0.04)] z-[-1]"
+                transition={{ type: "spring", stiffness: 450, damping: 35 }}
+              />
+            )}
+            {opt.icon && <span className="shrink-0">{opt.icon}</span>}
+            <span className="truncate">{opt.label}</span>
           </button>
         );
       })}

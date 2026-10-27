@@ -32,8 +32,8 @@ export const TabBar: React.FC<TabBarProps> = ({
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-xl border-t border-[rgba(60,60,67,0.12)] safe-bottom shadow-apple">
-      <div className="max-w-md mx-auto flex items-center justify-around py-2 px-2">
+    <nav className="fixed bottom-3 md:bottom-5 left-1/2 -translate-x-1/2 z-40 w-[94%] max-w-md pointer-events-none">
+      <div className="bg-white/90 backdrop-blur-2xl border border-[rgba(60,60,67,0.1)] rounded-full py-1.5 px-3 shadow-apple-modal flex items-center justify-around pointer-events-auto">
         {tabs.map((tab) => {
           const Icon = tab.icon;
           const isActive = currentTab === tab.id;
@@ -46,13 +46,15 @@ export const TabBar: React.FC<TabBarProps> = ({
                 }
                 onChangeTab(tab.id);
               }}
-              className={`flex flex-col items-center justify-center space-y-0.5 py-1 px-3 transition-all duration-150 active:scale-90 ${
-                isActive ? "text-[#007AFF] font-semibold" : "text-[#8E8E93]"
+              className={`flex flex-col items-center justify-center space-y-0.5 py-1 px-3.5 rounded-full transition-all duration-200 active:scale-90 ${
+                isActive
+                  ? "text-[#007AFF] font-bold"
+                  : "text-[#8E8E93] hover:text-[#1C1C1E]"
               }`}
             >
               <Icon
-                className={`w-5 h-5 ${
-                  isActive ? "stroke-[2.4]" : "stroke-[1.8]"
+                className={`w-5 h-5 transition-transform ${
+                  isActive ? "stroke-[2.5] scale-110" : "stroke-[1.8]"
                 }`}
               />
               <span className="text-[10px] tracking-tight">{tab.label}</span>

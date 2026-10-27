@@ -8,6 +8,9 @@ import { BottomSheet } from "@/components/apple/BottomSheet";
 import { SpotCard } from "@/components/spots/SpotCard";
 import { SpotDetailModal } from "@/components/spots/SpotDetailModal";
 import { FilterModal, FilterState } from "@/components/apple/FilterModal";
+import { SmartPills } from "@/components/apple/SmartPills";
+import { CommandPalette } from "@/components/apple/CommandPalette";
+import { SmartFilterId, matchesSmartFilter } from "@/lib/smartScore";
 import dynamic from "next/dynamic";
 
 const InteractiveMap = dynamic(
@@ -16,24 +19,20 @@ const InteractiveMap = dynamic(
     ssr: false,
     loading: () => (
       <div className="absolute inset-0 bg-[#EAECEF] flex items-center justify-center">
-        <div className="w-6 h-6 rounded-full border-2 border-[#007AFF] border-t-transparent animate-spin" />
+        <div className="w-7 h-7 rounded-full border-2 border-[#007AFF] border-t-transparent animate-spin" />
       </div>
     ),
   }
 );
+
 import { UserProfileView } from "@/components/profile/UserProfileView";
 import { SavedSpotsView } from "@/components/saved/SavedSpotsView";
 import { AdminManagementView } from "@/components/admin/AdminManagementView";
 import { AuthModal } from "@/components/auth/AuthModal";
 import { MOCK_SPOTS } from "@/lib/mockData";
 import { StudySpotItem } from "@/types/spot";
-import { BookOpen, Coffee, Presentation, LayoutGrid } from "lucide-react";
-import {
-  getSeatingOverrides,
-  updateSeating,
-  getBookmarks,
-  toggleBookmark,
-} from "@/lib/storage";
+import { BookOpen, Coffee, Presentation, LayoutGrid, Sparkles } from "lucide-react";
+import { updateSeating, toggleBookmark } from "@/lib/storage";
 import { Language, getLanguage, setLanguage, useTranslation } from "@/lib/i18n";
 import { getCurrentUser, AuthUser } from "@/lib/auth";
 
@@ -61,9 +60,11 @@ export default function Home() {
   const [spots, setSpots] = useState<StudySpotItem[]>(MOCK_SPOTS);
   const [currentTab, setCurrentTab] = useState<TabType>("explore");
   const [selectedType, setSelectedType] = useState<string>("all");
+  const [smartFilter, setSmartFilter] = useState<SmartFilterId>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSpot, setSelectedSpot] = useState<StudySpotItem | null>(null);
   const [isFilterModalOpen, setIsFilterModalOpen] = useState(false);
+  const [isCommandPaletteOpen, setIsCommandPaletteOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [userLocation, setUserLocation] = useState<{
     lat: number;
@@ -93,6 +94,18 @@ export default function Home() {
       window.removeEventListener("language-changed", handleLangChange);
       window.removeEventListener("auth-changed", handleAuthChange);
     };
+  }, []);
+
+  // Keyboard shortcut listener for Cmd+K / Ctrl+K
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        setIsCommandPaletteOpen((prev) => !prev);
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
   // Fetch spots from real SQLite Database via API
@@ -135,7 +148,6 @@ export default function Home() {
           );
         },
         () => {
-          // Fallback to AITU Expo coordinates if permission denied
           setUserLocation({ lat: 51.0908, lng: 71.4183 });
         },
         { enableHighAccuracy: true, timeout: 6000 }
@@ -188,6 +200,9 @@ export default function Home() {
       outletsRequired: false,
       freeOnly: false,
     });
+    setSmartFilter("all");
+    setSelectedType("all");
+    setSearchQuery("");
   };
 
   const activeFilterCount = useMemo(() => {
@@ -196,8 +211,9 @@ export default function Home() {
     if (filters.minWifiSpeed > 0) count++;
     if (filters.outletsRequired) count++;
     if (filters.freeOnly) count++;
+    if (smartFilter !== "all") count++;
     return count;
-  }, [filters]);
+  }, [filters, smartFilter]);
 
   // Filtered Spots Logic
   const filteredSpots = useMemo(() => {
@@ -217,26 +233,31 @@ export default function Home() {
         return false;
       }
 
-      // 3. Noise Filter
+      // 3. Smart Intent Pill
+      if (smartFilter !== "all" && !matchesSmartFilter(spot, smartFilter)) {
+        return false;
+      }
+
+      // 4. Noise Filter
       if (filters.noiseCategory !== "ALL") {
         if (spot.noiseLevel?.noiseCategory !== filters.noiseCategory)
           return false;
       }
 
-      // 4. Wi-Fi Speed Filter
+      // 5. Wi-Fi Speed Filter
       if (filters.minWifiSpeed > 0) {
         if ((spot.wifiInfo?.speedMbps || 0) < filters.minWifiSpeed)
           return false;
       }
 
-      // 5. Outlets Filter
+      // 6. Outlets Filter
       if (filters.outletsRequired) {
         const outletCount =
           spot.outlets?.reduce((acc, o) => acc + o.count, 0) || 0;
         if (outletCount < 10) return false;
       }
 
-      // 6. Free Only
+      // 7. Free Only
       if (filters.freeOnly) {
         if (spot.spotType === "cafe" && spot.cafe?.minOrderRequired)
           return false;
@@ -250,7 +271,7 @@ export default function Home() {
 
       return true;
     });
-  }, [spots, searchQuery, selectedType, filters]);
+  }, [spots, searchQuery, selectedType, smartFilter, filters]);
 
   // Crowdsourcing Update Handler with DB sync
   const handleUpdateSeats = (spotId: number, delta: number) => {
@@ -290,12 +311,13 @@ export default function Home() {
 
   return (
     <main className="relative w-screen h-screen overflow-hidden bg-[#F2F2F7]">
-      {/* 1. Header (Floating iOS Search Bar) */}
+      {/* 1. Header (Floating iOS / Raycast Search Bar) */}
       {currentTab === "explore" && (
         <Header
           searchQuery={searchQuery}
           setSearchQuery={setSearchQuery}
           onOpenFilters={() => setIsFilterModalOpen(true)}
+          onOpenCommandPalette={() => setIsCommandPaletteOpen(true)}
           activeFilterCount={activeFilterCount}
           lang={lang}
         />
@@ -309,7 +331,7 @@ export default function Home() {
         userLocation={userLocation}
       />
 
-      {/* 3. Bottom Sheet with Spot Cards */}
+      {/* 3. Bottom Sheet / Desktop Glass Sidebar with Spot Cards */}
       {currentTab === "explore" && (
         <BottomSheet
           headerContent={
@@ -340,17 +362,29 @@ export default function Home() {
                   },
                 ]}
               />
-              <div className="flex items-center justify-between text-xs text-[#8E8E93] px-1">
-                <span>
-                  {t("spotsFound")}{" "}
-                  <strong className="text-[#1C1C1E]">
-                    {filteredSpots.length}
-                  </strong>
+
+              {/* Smart Quick Intent Pills */}
+              <SmartPills
+                activeFilter={smartFilter}
+                onChange={setSmartFilter}
+                lang={lang}
+              />
+
+              {/* Status & Counter Bar */}
+              <div className="flex items-center justify-between text-xs text-[#8E8E93] px-1 pt-0.5">
+                <span className="flex items-center space-x-1">
+                  <Sparkles className="w-3 h-3 text-[#007AFF]" />
+                  <span>
+                    {t("spotsFound")}{" "}
+                    <strong className="text-[#1C1C1E]">
+                      {filteredSpots.length}
+                    </strong>
+                  </span>
                 </span>
                 {activeFilterCount > 0 && (
                   <button
                     onClick={resetFilters}
-                    className="text-[#007AFF] font-semibold"
+                    className="text-[#007AFF] font-semibold hover:underline active:opacity-70"
                   >
                     {t("reset")} ({activeFilterCount})
                   </button>
@@ -360,11 +394,17 @@ export default function Home() {
           }
         >
           {filteredSpots.length === 0 ? (
-            <div className="p-8 text-center text-xs text-[#8E8E93] space-y-1">
+            <div className="p-8 text-center text-xs text-[#8E8E93] space-y-2 bg-[#F2F2F7]/50 rounded-2xl">
               <p className="font-semibold text-[#1C1C1E] text-sm">
                 {t("nothingFound")}
               </p>
               <p>{t("nothingFoundHint")}</p>
+              <button
+                onClick={resetFilters}
+                className="mt-2 inline-flex items-center px-3 py-1.5 rounded-full bg-white text-xs font-semibold text-[#007AFF] border border-[rgba(60,60,67,0.08)] shadow-sm active:scale-95 transition-transform"
+              >
+                {t("reset")}
+              </button>
             </div>
           ) : (
             filteredSpots.map((spot) => (
@@ -385,7 +425,10 @@ export default function Home() {
       {currentTab === "saved" && (
         <SavedSpotsView
           spots={spots}
-          onSelectSpot={(s) => setSelectedSpot(s)}
+          onSelectSpot={(s) => {
+            setSelectedSpot(s);
+            setCurrentTab("explore");
+          }}
           onBack={() => setCurrentTab("explore")}
           lang={lang}
         />
@@ -427,7 +470,23 @@ export default function Home() {
         lang={lang}
       />
 
-      {/* 6. Spot Detail Sheet Modal */}
+      {/* 6. Spotlight Command Palette (Cmd+K) */}
+      <CommandPalette
+        isOpen={isCommandPaletteOpen}
+        onClose={() => setIsCommandPaletteOpen(false)}
+        spots={spots}
+        onSelectSpot={(s) => {
+          setSelectedSpot(s);
+          setCurrentTab("explore");
+        }}
+        onSelectSmartFilter={(sf) => {
+          setSmartFilter(sf);
+          setCurrentTab("explore");
+        }}
+        lang={lang}
+      />
+
+      {/* 7. Spot Detail Modal */}
       {selectedSpot && (
         <SpotDetailModal
           spot={selectedSpot}
@@ -438,7 +497,7 @@ export default function Home() {
         />
       )}
 
-      {/* 7. Auth Modal */}
+      {/* 8. Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
@@ -448,7 +507,7 @@ export default function Home() {
         lang={lang}
       />
 
-      {/* 8. Apple Translucent Tab Bar */}
+      {/* 9. Apple Floating Dock Tab Bar */}
       <TabBar
         currentTab={currentTab}
         onChangeTab={handleTabChange}
